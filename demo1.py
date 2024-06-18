@@ -22,6 +22,7 @@ def main():
             'rows': 69,
         }
     }
+    
 
     liha.set_active_tips_status(6, 8, False)
     liha.move_z_to_pos(700)
