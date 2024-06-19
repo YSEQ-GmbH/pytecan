@@ -45,7 +45,7 @@ class Tecan:
             self.firmware.close()
             raise Exception('Invalid firmware')
 
-        response = self.firmware.send_command(Command('M1', 'RFV0'))
+        response = self.firmware.send_command(Command('M1', 'RFV', params=[0]))
         if not response.content_str.startswith('GENESIS'):
             self.firmware.close()
             raise Exception(f'No support for {response.content_str} !')

@@ -2,5 +2,10 @@
     "cSpell.words": [
         "liha",
         "Tecan"
-    ]
+    ],
+    "python.analysis.extraPaths": [
+        "./src"
+    ],
+    "editor.defaultFormatter": "ms-python.autopep8",
+    "editor.formatOnSave": true
 }

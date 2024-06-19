@@ -4,7 +4,38 @@ from ..entities import Request, Response
 
 
 __all__ = ['Standard']
-CHANNELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
+CHANNELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+ERRORS = table = {
+    1: "Initialization failed",
+    2: "Invalid command",
+    3: "Invalid operand",
+    4: "CAN acknowledge problems",
+    5: "Device not implemented",
+    6: "CAN answer timeout",
+    7: "Device not initialized",
+    8: "Command overflow of TeCU",
+    9: "No liquid detected",
+    10: "Drive no load",
+    11: "Not enough liquid",
+    12: "Not enough liquid",
+    13: "No Flash access",
+    15: "Command overflow of subdevice",
+    17: "Measurement failed",
+    18: "Clot limit passed",
+    19: "No clot exit detected",
+    20: "No liquid exit detected",
+    21: "Delta pressure overrun (pLLD)",
+    22: "Tip Guard in wrong position",
+    23: "Not yet moved or move aborted",
+    24: "llid pulse error or reed crosstalk error",
+    25: "Tip not fetched",
+    26: "Tip not mounted",
+    27: "Tip mounted",
+    28: "Subdevice error",
+    29: "Application switch and axes mismatch",
+    30: "Wrong DC-Servo type",
+    31: "Virtual Drive"
+}
 
 
 def calculate_xor(data_bytes) -> int:
@@ -38,7 +69,10 @@ class Standard(Firmware):
         else:
             self.write(acknowledge)
             self.close()
-            raise Exception('Invalid response channel')
+            error_code = self.decode_error(response.status)
+            if error_code in ERRORS:
+                raise Exception(f'Error: {ERRORS[error_code]}')
+            raise Exception(f'Invalid response channel {response.data}')
 
         return response
 
@@ -55,9 +89,12 @@ class Standard(Firmware):
             self.close()
             exit(0)
 
+        print(f'- {data}')
+
         return data
 
     def write(self, data):
+        print(f'> {data}')
         # Check if the data is valid before sending it to the robot
         if not data.startswith(b'\x02'):
             raise ValueError('Data must start with STX')
@@ -76,7 +113,7 @@ class Standard(Firmware):
         etx = b'\x03'
         channel = CHANNELS.pop(0)
         full_message = stx + bytes(channel, 'utf-8') + \
-            command.device + command.command + etx
+            command.full_command + etx
         lrc = calculate_xor(full_message)
         full_message += bytes([lrc])
         return Request(full_message)
