@@ -21,27 +21,31 @@ class LiHa:
         if not self.__tecan.is_liha_connected:
             raise Exception('LiHa is not connected')
 
-        response = self.__firmware.send_command(Command(self.__device, 'RNT', params=[1]))
+        response = self.__firmware.send_command(
+            Command(self.__device, 'RNT', params=[1]))
         try:
             self.__tips_quantity = int(response.content_str)
             self.__active_tips_status = [True] * self.__tips_quantity
         except ValueError:
             raise Exception('Invalid tips quantity')
 
-        response = self.__firmware.send_command(Command(self.__device, 'RPX', params=[5]))
+        response = self.__firmware.send_command(
+            Command(self.__device, 'RPX', params=[5]))
         try:
             self.__actual_machine_x_range = int(response.content_str)
         except ValueError:
             raise Exception('Invalid machine x range')
 
-        response = self.__firmware.send_command(Command(self.__device, 'RPY', params=[5]))
+        response = self.__firmware.send_command(
+            Command(self.__device, 'RPY', params=[5]))
         try:
             self.__actual_machine_y_range = int(
                 response.content_str.split(',')[0])
         except ValueError:
             raise Exception('Invalid machine y range')
 
-        response = self.__firmware.send_command(Command(self.__device, 'RPZ', params=[5]))
+        response = self.__firmware.send_command(
+            Command(self.__device, 'RPZ', params=[5]))
         try:
             self.__actual_machine_z_range = int(
                 response.content_str.split(',')[0])
@@ -58,7 +62,8 @@ class LiHa:
 
         :return: The current position of the X-axis.
         '''
-        response = self.__firmware.send_command(Command(self.__device, 'RPX', params=[0]))
+        response = self.__firmware.send_command(
+            Command(self.__device, 'RPX', params=[0]))
         return int(response.content_str)
 
     def report_current_y_position(self) -> list[int]:
@@ -67,7 +72,8 @@ class LiHa:
 
         :return: A list containing the current position of the Y and Y-space axis.
         '''
-        response = self.__firmware.send_command(Command(self.__device, 'RPY', params=[0]))
+        response = self.__firmware.send_command(
+            Command(self.__device, 'RPY', params=[0]))
         return [int(x) for x in response.content_str.split(',')]
 
     def report_current_z_position(self) -> list[int]:
@@ -76,7 +82,8 @@ class LiHa:
 
         :return: A list of all Z-axis positions for the tips.
         '''
-        response = self.__firmware.send_command(Command(self.__device, 'RPZ', params=[0]))
+        response = self.__firmware.send_command(
+            Command(self.__device, 'RPZ', params=[0]))
         return [int(x) for x in response.content_str.split(',')]
 
     @property
@@ -104,7 +111,8 @@ class LiHa:
         '''
         Moves the X-axis to an absolute position, leaving the other axis position unchanged.
 
-        :param position: The absolute position to move to.
+        Args:
+        position: The absolute position to move to.
         '''
 
         if isinstance(position, float):
@@ -126,7 +134,8 @@ class LiHa:
         '''
         Moves the Y-axis to an absolute position, leaving the other axis position unchanged.
 
-        :param position: The absolute position to move to.
+        Args:
+        position: The absolute position to move to.
         '''
 
         if isinstance(position, float):
@@ -143,12 +152,13 @@ class LiHa:
 
         self.__firmware.send_command(
             Command(self.__device, 'PAY', params=[position, self.__y_spacing]))
-        
+
     def set_y_spacing(self, spacing: int):
         '''
         Sets the Y-axis spacing.
 
-        :param spacing: The spacing to set.
+        Args:
+        spacing: The spacing to set.
         '''
 
         if isinstance(spacing, float):
@@ -157,15 +167,15 @@ class LiHa:
         if not isinstance(spacing, int):
             self.__firmware.close()
             raise ValueError('Invalid y spacing: y spacing must be an integer')
-        
+
         self.__y_spacing = self.__minimum_y_spacing + spacing
-        
 
     def move_z_to_pos(self, position: int):
         '''
         Moves the Z-axis to an absolute position, leaving the other axis position unchanged.
 
-        :param position: The absolute position to move to.
+        Args:
+        position: The absolute position to move to.
         '''
 
         if isinstance(position, float):
@@ -184,14 +194,14 @@ class LiHa:
         self.__firmware.send_command(
             Command(self.__device, 'PAZ', params=[position if status else None for status in self.__active_tips_status]))
 
-    def set_active_tips_status(self, start_index, end_index, status):
+    def activate_tip_range(self, start_index: int, end_index: int):
         """
-        Set the active status of a range of tips.
+        Activates a range of tips and deactivates all others.
+        The activated tips will be used for the next operation.
 
-        Parameters:
-        start_index (int): The starting index of the range.
-        end_index (int): The ending index of the range.
-        status (bool): The new status for the tips in the range.
+        Args:
+        start_index: The 1-based starting index of the range to activate. For example, to start from the first tip, pass 1.
+        end_index: The 1-based ending index of the range to activate. For example, to end at the third tip, pass 3.
         """
 
         start_index -= 1
@@ -205,5 +215,32 @@ class LiHa:
             raise ValueError(
                 'Invalid end index: index must be within the range of active tips')
 
+        if start_index > end_index:
+            raise ValueError(
+                'Invalid range: start index must be less than or equal to end index')
+
+        self.__active_tips_status = [False] * \
+            len(self.__active_tips_status)
+
         for i in range(start_index, end_index + 1):
-            self.__active_tips_status[i] = status
+            self.__active_tips_status[i] = True
+
+    def activate_single_tip(self, tip_index: int):
+        """
+        Activates a single tip and deactivates all others.
+        The activated tip will be used for the next operation.
+
+        Args:
+        tip_index: The 1-based index of the tip to activate. For example, to activate the first tip, pass 1.
+        """
+
+        tip_index -= 1
+
+        if not 0 <= tip_index < len(self.__active_tips_status):
+            raise ValueError(
+                'Invalid tip index: index must be within the range of active tips')
+
+        self.__active_tips_status = [False] * \
+            len(self.__active_tips_status)
+
+        self.__active_tips_status[tip_index] = True
