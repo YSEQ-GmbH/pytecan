@@ -4,7 +4,7 @@ from ..entities import Request, Response
 
 
 __all__ = ['Standard']
-CHANNELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+CHANNELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I']
 ERRORS = table = {
     1: "Initialization failed",
     2: "Invalid command",
