@@ -1,3 +1,4 @@
+from typing import Optional
 from .tecan import Tecan
 from .entities import Command
 
@@ -84,7 +85,7 @@ class LiHa:
         '''
         response = self.__firmware.send_command(
             Command(self.__device, 'RPZ', params=[0]))
-        return [int(x) for x in response.content_str.split(',')]
+        return [self.__actual_machine_z_range - int(x) for x in response.content_str.split(',')]
 
     @property
     def actual_machine_x_range(self) -> int:
@@ -170,7 +171,14 @@ class LiHa:
 
         self.__y_spacing = self.__minimum_y_spacing + spacing
 
-    def move_z_to_pos(self, position: int):
+    @property
+    def y_spacing(self) -> int:
+        '''
+        Returns the Y-axis spacing.
+        '''
+        return self.__y_spacing
+
+    def move_z_to_pos(self, position: int, speed: Optional[int] = None):
         '''
         Moves the Z-axis to an absolute position, leaving the other axis position unchanged.
 
@@ -191,8 +199,65 @@ class LiHa:
                 'Invalid z position: z must be within the range 0 to ' + str(self.__actual_machine_z_range))
 
         position = self.__actual_machine_z_range - position
+
+        if speed is not None:
+            if not 0 <= speed <= 4000:
+                raise ValueError(
+                    'Invalid speed: speed must be within the range 0 to 4000')
+            self.__firmware.send_command(
+                Command(self.__device, 'MAZ', params=[position if status else None for status in self.__active_tips_status] + [speed]))
+        else:
+            self.__firmware.send_command(
+                Command(self.__device, 'PAZ', params=[position if status else None for status in self.__active_tips_status]))
+
+    def move_xyz_to_pos(self, x: int = 0, y: int = 0, z: int = 0):
+        '''
+        Moves the X, Y, and Z-axis to absolute positions.
+
+        Args:
+        x: The absolute position of the X-axis.
+        y: The absolute position of the Y-axis.
+        z: The absolute position of the Z-axis.
+        '''
+
+        if isinstance(x, float) or isinstance(y, float) or isinstance(z, float):
+            x = int(x)
+            y = int(y)
+            z = int(z)
+
+        if not isinstance(x, int):
+            self.__firmware.close()
+            raise ValueError('Invalid x position: x must be an integer')
+
+        if not isinstance(y, int):
+            self.__firmware.close()
+            raise ValueError('Invalid y position: y must be an integer')
+
+        if not isinstance(z, int):
+            self.__firmware.close()
+            raise ValueError('Invalid z position: z must be an integer')
+
+        if x < 0 or x > self.__actual_machine_x_range:
+            self.__firmware.close()
+            raise ValueError(
+                'Invalid x position: x must be within the range 0 to ' + str(self.__actual_machine_x_range))
+
+        if y < 0 or y > self.__actual_machine_y_range:
+            self.__firmware.close()
+            raise ValueError(
+                'Invalid y position: y must be within the range 0 to ' + str(self.__actual_machine_y_range))
+
+        if z < 0 or z > self.__actual_machine_z_range:
+            self.__firmware.close()
+            raise ValueError(
+                'Invalid z position: z must be within the range 0 to ' + str(self.__actual_machine_z_range))
+
+        z_position = self.__actual_machine_z_range - z
+        z_params = [
+            z_position if status else None for status in self.__active_tips_status]
+
         self.__firmware.send_command(
-            Command(self.__device, 'PAZ', params=[position if status else None for status in self.__active_tips_status]))
+            Command(self.__device, 'PAA', params=[x, y, self.__y_spacing] + z_params))
 
     def activate_tip_range(self, start_index: int, end_index: int):
         """
@@ -244,3 +309,10 @@ class LiHa:
             len(self.__active_tips_status)
 
         self.__active_tips_status[tip_index] = True
+
+    @property
+    def active_tips_status(self) -> list[bool]:
+        '''
+        Returns the status of all tips.
+        '''
+        return self.__active_tips_status

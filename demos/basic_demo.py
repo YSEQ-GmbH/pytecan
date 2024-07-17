@@ -54,7 +54,7 @@ def wash_tips(liha: LiHa, tecan: Tecan):
 
 def fill_tube(liha: LiHa, tecan: Tecan):
     liha.move_x_to_pos(2550)
-    liha.move_y_to_pos(1380)
+    liha.move_y_to_pos(1375)
     liha.move_z_to_pos(800)
 
     dispense_liquid(tecan, volume=1500, speed=9)
@@ -64,7 +64,7 @@ def fill_tube(liha: LiHa, tecan: Tecan):
 
 def aspirate_20ul(liha: LiHa, tecan: Tecan):
     liha.move_x_to_pos(2550)
-    liha.move_y_to_pos(1380)
+    liha.move_y_to_pos(1375)
     liha.move_z_to_pos(1140)
 
     aspirate(tecan, volume=20, speed=9)

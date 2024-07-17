@@ -36,6 +36,15 @@ def main():
         liha.move_z_to_pos(700)
         liha.move_z_to_pos(0)
 
+    # Slow speed
+    liha.activate_tip_range(1, 8)
+    liha.move_z_to_pos(700, speed=200)
+    liha.move_z_to_pos(0)
+
+    # Test XYZ-axis
+    liha.move_xyz_to_pos(x=1000, y=1000, z=600)
+    liha.move_xyz_to_pos(x=0, y=0, z=0)
+
 
 if __name__ == '__main__':
     main()

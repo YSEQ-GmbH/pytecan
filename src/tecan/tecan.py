@@ -63,3 +63,7 @@ class Tecan:
 
         if self.firmware.decode_error(roma_status) == 0:
             self.__is_roma_connected = True
+
+    def close(self):
+        self.firmware.close()
+        self.serial.close()
