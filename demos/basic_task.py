@@ -150,19 +150,27 @@ def dispense_liquid_from_tips(liha: LiHa, tecan: Tecan, volume: int = 9, x_pos=0
 
 
 def main():
+    # This is the volume of liquid to be aspirated and dispensed in microliters
+    volume = 10
+
+    # This is the number of rows of tubes in the plate to be filled with liquid. MAX is 12 rows.
+    rows = 6
+
     tecan = Tecan(port='/dev/tty.usbserial-110', firmware=Firmware.STANDARD)
     tecan.setup()
 
     liha = LiHa(tecan)
     liha.setup()
 
-    wash_tips(liha, tecan)
+    # wash_tips(liha, tecan)
 
-    for i in range(12):
-        fill_tips_with_liquid(liha, tecan, volume=30)
-        dispense_liquid_from_tips(liha, tecan, volume=30, x_pos=90*i)
+    for i in range(rows):
+        fill_tips_with_liquid(liha, tecan, volume=volume)
+        dispense_liquid_from_tips(liha, tecan, volume=volume, x_pos=90*i)
 
-    wash_tips(liha, tecan)
+    # wash_tips(liha, tecan)
+
+    
 
     tecan.close()
 
