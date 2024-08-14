@@ -1,6 +1,8 @@
 from typing import Optional
 from .tecan import Tecan
 from .entities import Command
+from .firmware.standard import calculate_tip_select
+
 
 __all__ = ['LiHa']
 
@@ -113,7 +115,7 @@ class LiHa:
         Moves the X-axis to an absolute position, leaving the other axis position unchanged.
 
         Args:
-        position: The absolute position to move to.
+            position: The absolute position to move to.
         '''
 
         if isinstance(position, float):
@@ -136,7 +138,7 @@ class LiHa:
         Moves the Y-axis to an absolute position, leaving the other axis position unchanged.
 
         Args:
-        position: The absolute position to move to.
+            position: The absolute position to move to.
         '''
 
         if isinstance(position, float):
@@ -159,7 +161,7 @@ class LiHa:
         Sets the Y-axis spacing.
 
         Args:
-        spacing: The spacing to set.
+            spacing: The spacing to set.
         '''
 
         if isinstance(spacing, float):
@@ -183,7 +185,8 @@ class LiHa:
         Moves the Z-axis to an absolute position, leaving the other axis position unchanged.
 
         Args:
-        position: The absolute position to move to.
+            position: The absolute position to move to.
+            speed: The speed of movement. speed in 0.1 mm/s [1..4000]
         '''
 
         if isinstance(position, float):
@@ -210,14 +213,45 @@ class LiHa:
             self.__firmware.send_command(
                 Command(self.__device, 'PAZ', params=[position if status else None for status in self.__active_tips_status]))
 
+    def move_z_to_detect_liquid_and_submerge(self, z_start: int, z_max: int, submerge_depth: int = 10):
+        '''
+        Moves the Z-axis until the liquid is detected.
+        Then, the Z-axis is submerged to a specified depth.
+
+        Args:
+            z_start: The starting position of the Z-axis to detect the liquid.
+            z_max: The maximum position of the Z-axis to detect the liquid.
+            submerge_depth: The depth to submerge the Z-axis after detecting the liquid.
+        '''
+        z_start = self.actual_machine_z_range - z_start
+        z_max = self.actual_machine_z_range - z_max
+
+        if not 0 <= z_start <= self.actual_machine_z_range:
+            raise ValueError(
+                'Invalid z_start: z_start must be within the range 0 to ' + str(self.actual_machine_z_range))
+
+        if not 0 <= z_max <= self.actual_machine_z_range:
+            raise ValueError(
+                'Invalid z_max: z_max must be within the range 0 to ' + str(self.actual_machine_z_range))
+
+        if not 0 <= submerge_depth <= z_max:
+            raise ValueError(
+                'Invalid submerge_depth: submerge_depth must be within the range 0 to ' + z_max)
+
+        active_tips = [i+1 for i,
+                       tip in enumerate(self.active_tips_status) if tip]
+
+        self.__firmware.send_command(
+            command=Command(self.__device, 'MDT', params=[calculate_tip_select(active_tips), submerge_depth, z_start,  z_max]))
+
     def move_xyz_to_pos(self, x: int = 0, y: int = 0, z: int = 0):
         '''
         Moves the X, Y, and Z-axis to absolute positions.
 
         Args:
-        x: The absolute position of the X-axis.
-        y: The absolute position of the Y-axis.
-        z: The absolute position of the Z-axis.
+            x: The absolute position of the X-axis.
+            y: The absolute position of the Y-axis.
+            z: The absolute position of the Z-axis.
         '''
 
         if isinstance(x, float) or isinstance(y, float) or isinstance(z, float):
@@ -265,8 +299,8 @@ class LiHa:
         The activated tips will be used for the next operation.
 
         Args:
-        start_index: The 1-based starting index of the range to activate. For example, to start from the first tip, pass 1.
-        end_index: The 1-based ending index of the range to activate. For example, to end at the third tip, pass 3.
+            start_index: The 1-based starting index of the range to activate. For example, to start from the first tip, pass 1.
+            end_index: The 1-based ending index of the range to activate. For example, to end at the third tip, pass 3.
         """
 
         start_index -= 1
@@ -296,7 +330,7 @@ class LiHa:
         The activated tip will be used for the next operation.
 
         Args:
-        tip_index: The 1-based index of the tip to activate. For example, to activate the first tip, pass 1.
+            tip_index: The 1-based index of the tip to activate. For example, to activate the first tip, pass 1.
         """
 
         tip_index -= 1
@@ -316,3 +350,139 @@ class LiHa:
         Returns the status of all tips.
         '''
         return self.__active_tips_status
+
+    def aspriate(self, volume: int = 20, speed: int = 9):
+        '''
+        Aspirates a liquid or air from the current position of the Z-axis.
+
+        Args:
+            volume: The volume to aspirate.
+            speed: The speed of aspiration.
+                   SpeedCode:
+                   0  = 6000 HS/s;  21 = 160 HS/s
+                   1  = 5600 HS/s;  22 = 150 HS/s
+                   2  = 5000 HS/s;  23 = 140 HS/s
+                   3  = 4400 HS/s;  24 = 130 HS/s
+                   4  = 3800 HS/s;  25 = 120 HS/s
+                   5  = 3200 HS/s;  26 = 110 HS/s
+                   6  = 2600 HS/s;  27 = 100 HS/s
+                   7  = 2200 HS/s;  28 = 90 HS/s
+                   8  = 2000 HS/s;  29 = 80 HS/s
+                   9  = 1800 HS/s;  30 = 70 HS/s
+                   10 = 1600 HS/s;  31 = 60 HS/s
+                   11 = 1400 HS/s;  32 = 50 HS/s
+                   12 = 1200 HS/s;  33 = 40 HS/s
+                   13 = 1000 HS/s;  34 = 30 HS/s
+                   14 = 800 HS/s;   35 = 20 HS/s
+                   15 = 600 HS/s;   36 = 18 HS/s
+                   16 = 400 HS/s;   37 = 16 HS/s
+                   17 = 200 HS/s;   38 = 14 HS/s
+                   18 = 190 HS/s;   39 = 12 HS/s
+                   19 = 180 HS/s;   40 = 10 HS/s
+                   20 = 170 HS/s (default = 9)
+        '''
+        volume = int(volume * 3.15)
+
+        if volume < 1 or volume > 3150:
+            raise ValueError(
+                'Invalid volume: volume must be within the range 1 to 1000')
+
+        if speed < 0 or speed > 20:
+            raise ValueError(
+                'Invalid speed: speed must be within the range 0 to 20')
+
+        self.__firmware.send_commands(
+            [Command(f'D{index + 1}', f'S{speed}OP{volume}R', params=[volume, speed]) for index,
+             status in enumerate(self.__active_tips_status) if status],
+            group_channel='D'
+        )
+
+    def dispense(self, volume: int = 20, speed: int = 9):
+        '''
+        Dispenses a liquid or air from the current position of the Z-axis.
+
+        Args:
+            volume: The volume to dispense.
+            speed: The speed of dispensing.
+                   SpeedCode:
+                   0  = 6000 HS/s;  21 = 160 HS/s
+                   1  = 5600 HS/s;  22 = 150 HS/s
+                   2  = 5000 HS/s;  23 = 140 HS/s
+                   3  = 4400 HS/s;  24 = 130 HS/s
+                   4  = 3800 HS/s;  25 = 120 HS/s
+                   5  = 3200 HS/s;  26 = 110 HS/s
+                   6  = 2600 HS/s;  27 = 100 HS/s
+                   7  = 2200 HS/s;  28 = 90 HS/s
+                   8  = 2000 HS/s;  29 = 80 HS/s
+                   9  = 1800 HS/s;  30 = 70 HS/s
+                   10 = 1600 HS/s;  31 = 60 HS/s
+                   11 = 1400 HS/s;  32 = 50 HS/s
+                   12 = 1200 HS/s;  33 = 40 HS/s
+                   13 = 1000 HS/s;  34 = 30 HS/s
+                   14 = 800 HS/s;   35 = 20 HS/s
+                   15 = 600 HS/s;   36 = 18 HS/s
+                   16 = 400 HS/s;   37 = 16 HS/s
+                   17 = 200 HS/s;   38 = 14 HS/s
+                   18 = 190 HS/s;   39 = 12 HS/s
+                   19 = 180 HS/s;   40 = 10 HS/s
+                   20 = 170 HS/s (default = 9)
+        '''
+        volume = int(volume * 3.15)
+
+        if volume < 1 or volume > 3150:
+            raise ValueError(
+                'Invalid volume: volume must be within the range 1 to 1000')
+
+        if speed < 0 or speed > 20:
+            raise ValueError(
+                'Invalid speed: speed must be within the range 0 to 20')
+
+        self.__firmware.send_commands(
+            [Command(f'D{index + 1}', f'S{speed}OD{volume}R', params=[volume, speed]) for index,
+             status in enumerate(self.__active_tips_status) if status],
+            group_channel='D'
+        )
+
+    def wash_tips(self, x_position: int = 0, y_position: int = 1059, z_position: int = 700):
+        '''
+        Washes the tips at a specified XYZ position.
+
+        Args:
+            x_position: The absolute position of the X-axis.
+            y_position: The absolute position of the Y-axis.
+            z_position: The absolute position of the Z-axis.
+        '''
+        self.move_xyz_to_pos(x=x_position, y=y_position, z=z_position)
+
+        self.__firmware.send_commands(
+            [Command(f'D{index + 1}', 'YIP100OS9OD100R') for index,
+             status in enumerate(self.__active_tips_status) if status],
+            group_channel='D'
+        )
+
+        self.__firmware.send_commands(
+            [Command(f'D{index + 1}', 'OV3600A0R') for index,
+             status in enumerate(self.__active_tips_status) if status],
+            group_channel='D'
+        )
+
+        self.__firmware.send_commands(
+            [Command(f'D{index + 1}', 'BR') for index,
+             status in enumerate(self.__active_tips_status) if status],
+            group_channel='D'
+        )
+
+        self.__firmware.send_command(
+            Command('O1', 'AFI', params=[1, 38, 8]))
+
+        self.__firmware.send_commands(
+            [Command(f'D{index + 1}', 'M500IR') for index,
+             status in enumerate(self.__active_tips_status) if status],
+            group_channel='D'
+        )
+
+        self.__firmware.send_commands(
+            [Command(f'D{index + 1}', 'IV3600P1500OA0R') for index,
+             status in enumerate(self.__active_tips_status) if status],
+            group_channel='D'
+        )

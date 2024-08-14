@@ -2,6 +2,15 @@ from tecan import Tecan, Firmware, LiHa
 from tecan.entities import Command
 
 
+def group_command(tecan: Tecan, cmd: str):
+    group_channel = 'G'
+
+    tecan.firmware.send_commands(
+        [Command(f'D{i}', cmd) for i in range(1, 9)], group_channel=group_channel)
+
+    print()
+
+
 def aspirate(tecan: Tecan, volume: int = 0, speed: int = 9, device='D1'):
     volume = int(volume * 3.15)
     if volume > 3150:
@@ -33,27 +42,18 @@ def wash_tips(liha: LiHa, tecan: Tecan):
     liha.move_y_to_pos(liha.actual_machine_y_range/2 - 350)
     liha.move_z_to_pos(700)
 
-    # Initialize diluter
-    for i, tip in enumerate(liha.active_tips_status):
-        device = f'D{i+1}'
-        if tip:
-            tecan.firmware.send_command(
-                command=Command(device, 'YIP100OS9OD100R'))
-            tecan.firmware.send_command(command=Command(device, 'OV3600A0R'))
-            tecan.firmware.send_command(command=Command(device, 'BR'))
+    group_command(tecan, 'YIP100OS9OD100R')
+    group_command(tecan, 'OV3600A0R')
+    group_command(tecan, 'BR')
 
     tecan.firmware.send_command(
-        command=Command('O1', 'AFI', params=[1, 38, 8]))
+        command=Command('O1', 'AFI', params=[1, 38, 18]))
 
-    for i, tip in enumerate(liha.active_tips_status):
-        device = f'D{i+1}'
-        if tip:
-            tecan.firmware.send_command(command=Command(device, 'M500IR'))
-            tecan.firmware.send_command(
-                command=Command(device, 'IV3600P1500OA0R'))
+    group_command(tecan, 'M500IR')
+    group_command(tecan, 'IV3600P1500OA0R')
 
-            # Air gap
-            aspirate(tecan, volume=300, speed=9, device=device)
+    # Air gap
+    liha.aspriate(volume=300, speed=5)
 
     liha.move_z_to_pos(0)
 
@@ -121,24 +121,27 @@ def dispense_liquid_from_tips(liha: LiHa, tecan: Tecan, volume: int = 9, x_pos=0
 
     liha.move_xyz_to_pos(x=full_x_pos, y=1220, z=920)
 
-    for i, tip in enumerate(liha.active_tips_status):
-        device = f'D{i+1}'
-        if tip:
-            dispense_air_gap(tecan, speed=9, device=device)
+    liha.dispense(volume=30)
+    # for i, tip in enumerate(liha.active_tips_status):
+    #     device = f'D{i+1}'
+    #     if tip:
+    #         dispense_air_gap(tecan, speed=9, device=device)
 
     liha.move_z_to_pos(960, speed=400)
 
-    for i, tip in enumerate(liha.active_tips_status):
-        device = f'D{i+1}'
-        if tip:
-            dispense(tecan, volume=volume, speed=9, device=device)
+    liha.dispense(volume=volume)
+    # for i, tip in enumerate(liha.active_tips_status):
+    #     device = f'D{i+1}'
+    #     if tip:
+    #         dispense(tecan, volume=volume, speed=9, device=device)
 
     liha.move_z_to_pos(920, speed=400)
 
-    for i, tip in enumerate(liha.active_tips_status):
-        device = f'D{i+1}'
-        if tip:
-            dispense_air_gap(tecan, speed=9, device=device)
+    liha.dispense(volume=30)
+    # for i, tip in enumerate(liha.active_tips_status):
+    #     device = f'D{i+1}'
+    #     if tip:
+    #         dispense_air_gap(tecan, speed=9, device=device)
 
     # touch wall
     liha.move_x_to_pos(full_x_pos - 23)
@@ -162,15 +165,13 @@ def main():
     liha = LiHa(tecan)
     liha.setup()
 
-    # wash_tips(liha, tecan)
+    wash_tips(liha, tecan)
 
     for i in range(rows):
         fill_tips_with_liquid(liha, tecan, volume=volume)
         dispense_liquid_from_tips(liha, tecan, volume=volume, x_pos=90*i)
 
-    # wash_tips(liha, tecan)
-
-    
+    wash_tips(liha, tecan)
 
     tecan.close()
 

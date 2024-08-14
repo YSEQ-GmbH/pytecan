@@ -2,13 +2,13 @@ from tecan import Tecan, Firmware, LiHa
 
 
 def main():
-    tecan = Tecan(port='/dev/tty.usbserial-110', firmware=Firmware.STANDARD)
+    tecan = Tecan(port='/dev/tty.usbserial-1110', firmware=Firmware.STANDARD)
     tecan.setup()
 
     liha = LiHa(tecan)
     liha.setup()
 
-    # Test X-axis
+    # # Test X-axis
     liha.move_x_to_pos(1000)
     liha.move_x_to_pos(0)
 
@@ -20,6 +20,7 @@ def main():
     liha.move_y_to_pos(1000)
 
     liha.set_y_spacing(0)
+
     liha.move_y_to_pos(0)
 
     # Test Z-axis

@@ -1,10 +1,10 @@
+from typing import Optional
 from serial import Serial
 from .firmware import Firmware
 from ..entities import Request, Response
 
 
 __all__ = ['Standard']
-CHANNELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I']
 ERRORS = table = {
     1: "Initialization failed",
     2: "Invalid command",
@@ -45,26 +45,39 @@ def calculate_xor(data_bytes) -> int:
     return checksum
 
 
+def calculate_tip_select(tips):
+    """
+    Calculate the TipSelect value for the given list of tips.
+
+    Args:
+    tips (list of int): List of tip numbers to be selected (e.g., [2, 4, 6, 8]).
+
+    Returns:
+    int: The calculated TipSelect value.
+    """
+    tip_select = 0
+    for tip in tips:
+        # Set the corresponding bit for each tip number
+        tip_select |= 1 << (tip - 1)
+    return tip_select
+
+
 class Standard(Firmware):
     def __init__(self, serial):
         self.serial: Serial = serial
         self.channel_position = 16
 
     def send_command(self, command):
-        global CHANNELS
-
         request: Request = self.build_request(command)
         self.write(request.data)
 
         acknowledge = self.read()
 
-        response = Response(self.read())
+        response = Response.from_data(self.read())
         response_channel = bytes(
             [ord(response.channel) - self.channel_position])
 
         if response_channel == request.channel:
-            CHANNELS.append(response_channel.decode('utf-8'))
-            CHANNELS = sorted(CHANNELS)
             self.write(acknowledge)
         else:
             self.write(acknowledge)
@@ -75,6 +88,57 @@ class Standard(Firmware):
             raise Exception(f'Invalid response channel {response.data}')
 
         return response
+
+    def send_commands(self, commands, group_channel: Optional[str] = None):
+
+        requests = [self.build_request(
+            command, custom_channel=group_channel) for command in commands]
+
+        # Send the requests
+        for request in requests:
+            self.write(request.data)
+
+        aknowledges = []
+        responses: list[Response] = []
+        counter = 0
+
+        # Read the responses and aknowledges
+        while counter < len(commands)*2:
+            data = self.read()
+            if len(data) == 6:
+                aknowledges.append(data)
+                counter += 1
+            else:
+                response = Response.from_data(data)
+                already_exists = False
+                for exists_response in responses:
+                    if exists_response.device == response.device:
+                        already_exists = True
+                        break
+                if not already_exists:
+                    responses.append(response)
+                    counter += 1
+
+        # Send the aknowledges
+        for aknowledge in aknowledges:
+            self.write(aknowledge)
+
+        # Check if the responses are valid
+        for response in responses:
+            response_channel = chr(
+                ord(response.channel) - self.channel_position)
+
+            if response_channel != group_channel:
+                self.close()
+                error_code = self.decode_error(response.status)
+                if error_code in ERRORS:
+                    raise Exception(f'Error: {ERRORS[error_code]}')
+                raise Exception(f'Invalid response channel {response.data}')
+
+        # read all searial buffer to clean it and avoid issues
+        self.serial.read_all()
+
+        return responses
 
     def read(self, size=None):
         try:
@@ -106,12 +170,13 @@ class Standard(Firmware):
         self.serial.flushInput()
         self.serial.write(data)
 
-    def build_request(self, command):
-        global CHANNELS
-
+    def build_request(self, command, custom_channel=None):
         stx = b'\x02'
         etx = b'\x03'
-        channel = CHANNELS.pop(0)
+        if custom_channel:
+            channel: str = custom_channel
+        else:
+            channel: str = 'A'  # Default channel
         full_message = stx + bytes(channel, 'utf-8') + \
             command.full_command + etx
         lrc = calculate_xor(full_message)

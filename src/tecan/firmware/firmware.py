@@ -12,6 +12,10 @@ class Firmware(ABC):
         pass
 
     @abstractmethod
+    def send_commands(self, commands: list[Command]):
+        pass
+
+    @abstractmethod
     def read(self, size: Optional[int] = None) -> bytes:
         pass
 
@@ -20,7 +24,7 @@ class Firmware(ABC):
         pass
 
     @abstractmethod
-    def build_request(self, command: Command) -> Request:
+    def build_request(self, command: Command, custom_channel: Optional[str] = None) -> Request:
         pass
 
     @abstractmethod

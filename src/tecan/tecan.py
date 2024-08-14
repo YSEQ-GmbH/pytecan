@@ -32,6 +32,10 @@ class Tecan:
             interCharTimeout=10
         )
 
+        # clean the buffer before starting the communication to avoid any garbage data
+        self.serial.reset_input_buffer()
+        self.serial.reset_output_buffer()
+
         if self.__firmware == Firmware.STANDARD:
             from .firmware.standard import Standard
             self.firmware = Standard(self.serial)
