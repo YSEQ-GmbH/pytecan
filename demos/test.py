@@ -30,12 +30,12 @@ def fill_plate_with_blue_water(liha: LiHa, volume: int):
     for i in range(Config.ROWS):
         # Aspirate blue water, create an air gap before aspirating, and another air gap after aspirating
         liha.move_xyz_to_pos(x=1230, y=1100, z=700)
-        liha.aspriate(volume=Config.AIR_GAP_VOLUME, speed=1)
+        liha.aspirate(volume=Config.AIR_GAP_VOLUME, speed=1)
         liha.move_z_to_detect_liquid_and_submerge(
             z_start=700, z_max=970, submerge_depth=10)
-        liha.aspriate(volume=volume)
+        liha.aspirate(volume=volume)
         liha.move_z_to_pos(700)
-        liha.aspriate(volume=Config.AIR_GAP_VOLUME, speed=1)
+        liha.aspirate(volume=Config.AIR_GAP_VOLUME, speed=1)
         liha.move_z_to_pos(0)
 
         # Dispense blue water to plate with air gap before and after dispensing and touch wall
@@ -62,9 +62,9 @@ def remove_blue_water_to_waste(liha: LiHa, volume: int):
         row_x_pos = 5110 + (i * 90)
         liha.set_y_spacing(5)
         liha.move_xyz_to_pos(x=row_x_pos, y=2185, z=940)
-        liha.aspriate(volume=Config.AIR_GAP_VOLUME, speed=1)
+        liha.aspirate(volume=Config.AIR_GAP_VOLUME, speed=1)
         liha.move_z_to_pos(1140, speed=400)
-        liha.aspriate(volume=volume)
+        liha.aspirate(volume=volume)
 
         liha.move_x_to_pos(row_x_pos + 5)
         for _ in range(3):
@@ -73,7 +73,7 @@ def remove_blue_water_to_waste(liha: LiHa, volume: int):
         liha.move_x_to_pos(row_x_pos)
 
         liha.move_z_to_pos(940)
-        liha.aspriate(volume=Config.AIR_GAP_VOLUME, speed=1)
+        liha.aspirate(volume=Config.AIR_GAP_VOLUME, speed=1)
         liha.move_z_to_pos(0)
         liha.set_y_spacing(0)
 
@@ -87,7 +87,7 @@ def remove_blue_water_to_waste(liha: LiHa, volume: int):
         liha.move_x_to_pos(1230 - 90)
         liha.move_x_to_pos(1230)
 
-        liha.aspriate(volume=air, speed=0)
+        liha.aspirate(volume=air, speed=0)
         liha.move_z_to_pos(0)
 
 
@@ -95,12 +95,12 @@ def fill_plate_with_normal_water(liha: LiHa, volume: int):
     for i in range(Config.ROWS):
         # Aspirate normal water, create an air gap before aspirating, and another air gap after aspirating
         liha.move_xyz_to_pos(x=1230, y=150, z=700)
-        liha.aspriate(volume=Config.AIR_GAP_VOLUME, speed=1)
+        liha.aspirate(volume=Config.AIR_GAP_VOLUME, speed=1)
         liha.move_z_to_detect_liquid_and_submerge(
             z_start=700, z_max=1580, submerge_depth=15)
-        liha.aspriate(volume=volume)
+        liha.aspirate(volume=volume)
         liha.move_z_to_pos(700)
-        liha.aspriate(volume=Config.AIR_GAP_VOLUME, speed=1)
+        liha.aspirate(volume=Config.AIR_GAP_VOLUME, speed=1)
         liha.move_z_to_pos(0)
 
         # Dispense normal water to plate with air gap before and after dispensing and touch wall
@@ -130,9 +130,9 @@ def transfer_normal_water_to_different_plate(liha: LiHa, volume: int):
         # Aspirate normal water from the plate on the magnet, create an air gap before aspirating, and another air gap after aspirating
         row_x_pos = 5110 + (i * 90)
         liha.move_xyz_to_pos(x=row_x_pos, y=2185, z=940)
-        liha.aspriate(volume=Config.AIR_GAP_VOLUME, speed=1)
+        liha.aspirate(volume=Config.AIR_GAP_VOLUME, speed=1)
         liha.move_z_to_pos(1140, speed=400)
-        liha.aspriate(volume=volume)
+        liha.aspirate(volume=volume)
 
         liha.move_x_to_pos(row_x_pos + 5)
         for _ in range(3):
@@ -141,7 +141,7 @@ def transfer_normal_water_to_different_plate(liha: LiHa, volume: int):
         liha.move_x_to_pos(row_x_pos)
 
         liha.move_z_to_pos(940)
-        liha.aspriate(volume=Config.AIR_GAP_VOLUME, speed=1)
+        liha.aspirate(volume=Config.AIR_GAP_VOLUME, speed=1)
         liha.move_z_to_pos(0)
 
         # Dispense normal water to waste with air gap before and after dispensing
@@ -165,10 +165,10 @@ def main():
 
     # Wash tips
     liha.wash_tips()
-    liha.aspriate(volume=300, speed=0)
+    liha.aspirate(volume=300, speed=0)
     time.sleep(1)
     liha.dispense(volume=300, speed=0)
-    liha.aspriate(volume=200, speed=1)
+    liha.aspirate(volume=200, speed=1)
     liha.move_z_to_pos(0)
 
     # Fill plate with blue water
@@ -183,10 +183,10 @@ def main():
     # Wash tips
 
     liha.wash_tips()
-    liha.aspriate(volume=300, speed=0)
+    liha.aspirate(volume=300, speed=0)
     time.sleep(1)
     liha.dispense(volume=300, speed=0)
-    liha.aspriate(volume=200, speed=1)
+    liha.aspirate(volume=200, speed=1)
     liha.move_z_to_pos(0)
 
     # Fill plate with normal water

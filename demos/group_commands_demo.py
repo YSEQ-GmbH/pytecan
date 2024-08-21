@@ -12,7 +12,7 @@ def main():
 
     liha.wash_tips()
 
-    liha.aspriate(volume=300, speed=5)
+    liha.aspirate(volume=300, speed=5)
 
     liha.move_z_to_pos(0)
 
@@ -26,10 +26,10 @@ def main():
 
     liha.wash_tips()
 
-    liha.aspriate(volume=300, speed=1)
+    liha.aspirate(volume=300, speed=1)
     liha.dispense(volume=300, speed=1)
 
-    liha.aspriate(volume=300, speed=20)
+    liha.aspirate(volume=300, speed=20)
 
     liha.activate_single_tip(1)
 

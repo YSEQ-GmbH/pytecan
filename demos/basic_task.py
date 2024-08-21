@@ -53,7 +53,7 @@ def wash_tips(liha: LiHa, tecan: Tecan):
     group_command(tecan, 'IV3600P1500OA0R')
 
     # Air gap
-    liha.aspriate(volume=300, speed=5)
+    liha.aspirate(volume=300, speed=5)
 
     liha.move_z_to_pos(0)
 
