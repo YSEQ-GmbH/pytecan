@@ -148,10 +148,10 @@ class LiHa:
             self.__firmware.close()
             raise ValueError('Invalid y position: y must be an integer')
 
-        if position < 0 or position > self.__actual_machine_y_range:
+        if position < -800 or position > self.__actual_machine_y_range:
             self.__firmware.close()
             raise ValueError(
-                'Invalid y position: y must be within the range 0 to ' + str(self.__actual_machine_y_range))
+                'Invalid y position: y must be within the range -800 to ' + str(self.__actual_machine_y_range))
 
         self.__firmware.send_command(
             Command(self.__device, 'PAY', params=[position, self.__y_spacing]))
@@ -242,7 +242,7 @@ class LiHa:
                        tip in enumerate(self.active_tips_status) if tip]
 
         self.__firmware.send_command(
-            command=Command(self.__device, 'MDT', params=[calculate_tip_select(active_tips), submerge_depth, z_start,  z_max]))
+            command=Command(self.__device, 'MET', params=[calculate_tip_select(active_tips), submerge_depth, z_start,  z_max]))
 
     def move_xyz_to_pos(self, x: int = 0, y: int = 0, z: int = 0):
         '''
@@ -276,10 +276,10 @@ class LiHa:
             raise ValueError(
                 'Invalid x position: x must be within the range 0 to ' + str(self.__actual_machine_x_range))
 
-        if y < 0 or y > self.__actual_machine_y_range:
+        if y < -800 or y > self.__actual_machine_y_range:
             self.__firmware.close()
             raise ValueError(
-                'Invalid y position: y must be within the range 0 to ' + str(self.__actual_machine_y_range))
+                'Invalid y position: y must be within the range -800 to ' + str(self.__actual_machine_y_range))
 
         if z < 0 or z > self.__actual_machine_z_range:
             self.__firmware.close()
@@ -324,6 +324,26 @@ class LiHa:
         for i in range(start_index, end_index + 1):
             self.__active_tips_status[i] = True
 
+    def activate_tip_custom(self, tips: list[int]):
+        """
+        Activates a custom list of tips and deactivates all others.
+        The activated tips will be used for the next operation.
+
+        Args:
+            tips: A list of 1-based tip indexes to activate. For example, to activate the first and third tips, pass [1, 3].
+        """
+
+        for tip in tips:
+            if not 0 < tip <= len(self.__active_tips_status):
+                raise ValueError(
+                    'Invalid tip index: index must be within the range of active tips')
+
+        self.__active_tips_status = [False] * \
+            len(self.__active_tips_status)
+
+        for tip in tips:
+            self.__active_tips_status[tip - 1] = True
+
     def activate_single_tip(self, tip_index: int):
         """
         Activates a single tip and deactivates all others.
@@ -344,6 +364,14 @@ class LiHa:
 
         self.__active_tips_status[tip_index] = True
 
+    def activate_all_tips(self):
+        """
+        Activates all tips.
+        All tips will be used for the next operation.
+        """
+
+        self.__active_tips_status = [True] * len(self.__active_tips_status)
+
     @property
     def active_tips_status(self) -> list[bool]:
         '''
@@ -351,7 +379,7 @@ class LiHa:
         '''
         return self.__active_tips_status
 
-    def aspriate(self, volume: int = 20, speed: int = 9):
+    def aspirate(self, volume: int = 20, speed: int = 9):
         '''
         Aspirates a liquid or air from the current position of the Z-axis.
 
@@ -387,12 +415,12 @@ class LiHa:
             raise ValueError(
                 'Invalid volume: volume must be within the range 1 to 1000')
 
-        if speed < 0 or speed > 20:
+        if speed < 0 or speed > 40:
             raise ValueError(
-                'Invalid speed: speed must be within the range 0 to 20')
+                'Invalid speed: speed must be within the range 0 to 40')
 
         self.__firmware.send_commands(
-            [Command(f'D{index + 1}', f'S{speed}OP{volume}R', params=[volume, speed]) for index,
+            [Command(f'D{index + 1}', f'S{speed}OP{volume}R') for index,
              status in enumerate(self.__active_tips_status) if status],
             group_channel='D'
         )
@@ -433,12 +461,12 @@ class LiHa:
             raise ValueError(
                 'Invalid volume: volume must be within the range 1 to 1000')
 
-        if speed < 0 or speed > 20:
+        if speed < 0 or speed > 40:
             raise ValueError(
-                'Invalid speed: speed must be within the range 0 to 20')
+                'Invalid speed: speed must be within the range 0 to 40')
 
         self.__firmware.send_commands(
-            [Command(f'D{index + 1}', f'S{speed}OD{volume}R', params=[volume, speed]) for index,
+            [Command(f'D{index + 1}', f'S{speed}OD{volume}R') for index,
              status in enumerate(self.__active_tips_status) if status],
             group_channel='D'
         )

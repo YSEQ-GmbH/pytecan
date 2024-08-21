@@ -1,3 +1,4 @@
+import time
 import serial
 from .firmware import Firmware
 from .entities import Command
@@ -69,5 +70,6 @@ class Tecan:
             self.__is_roma_connected = True
 
     def close(self):
+        time.sleep(2)
         self.firmware.close()
         self.serial.close()
