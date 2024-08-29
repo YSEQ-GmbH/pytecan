@@ -1,100 +1,8 @@
-'''
-Initialize robot and liha - DONE
-Wash all tips - DONE
-Aspirate 250ul of air - DONE
-
-User prompt: - DONE
-    Fill trough B4 with x uL of beads.
-    Put sample plate on C3.
-    Put DWP on B3.
-    Press Enter to continue...
-
-Fill all 12 columns of DWP (B3) with beads (B4) - DONE
-    -> 50ul per well
-    Liquid detection for aspirating in B4
-    z_start for dispensing in B3
-Wash all tips - DONE
-Aspirate 250ul of air - DONE
-
-Transfer all samples (C3) to same well in DWP (B3) - DONE
-    -> everything of C3!!
-    z_max for aspirating in C3
-    Liquid detection and submerge for dispensing in B3
-    Mix every column 10 times on middle z-height
-       Aspirate 70ul per well
-       Dispense 70ul per well
-    WASH ALL TIPS AFTER EVERY COLUMN
-
-User prompt: - DONE
-    Leave DWP to incubate for 10mins off the magnet (e.g. at D1).
-    Open lids of EtOH and LowTE tubes.
-    Place DWP on magnet (A1).
-    Press Enter to continue...
-
-Start and wait timer (5mins) - DONE
-
-Remove all liquid from DWP (A1) to liquid trash (A3) - DONE
-    -> everything of A1!!
-    z_max for aspirating in A1
-    WASH ALL TIPS AFTER EVERY COLUMN
-
-Fill all 12 columns of DWP (A1) with EtOH (A5) # DONE
-    -> 600ul per well
-    Liquid detection for aspirating in A5
-        Fill tips 4 after 4
-    z_start for dispensing in A1
-    No tip touch, no washing between columns
-
-Remove all liquid from DWP (A1) to liquid trash (A3) # DONE
-    -> everything of A1!!
-    z_max for aspirating in A1
-    WASH ALL TIPS AFTER EVERY COLUMN
-
-Fill all 12 columns of DWP (A1) with EtOH (A5) for 2nd time # DONE
-    -> 600ul per well
-    Liquid detection for aspirating in A5
-        Fill tips 4 after 4
-    z_start for dispensing in A1
-    No tip touch, no washing between columns
-
-Remove all liquid from DWP (A1) to liquid trash (A3) for 2nd time # DONE
-    -> everything of A1!!
-    z_max for aspirating in A1
-    WASH ALL TIPS AFTER EVERY COLUMN
-
-Start and wait timer (5mins) # DONE
-
-Fill all 12 columns of DWP (A1) with LowTE (A6-D6)
-    -> 11uL per well
-    Liquid detection for aspirating in A6-D6
-        Fill tips 4 after 4
-    z_start for dispensing in A1
-    No tip touch, no washing between columns
-
-User prompt:
-    Vortex DWP (A1).
-    Rest DWP (A1) for 5mins off the magnet (e.g. at D1).
-    Place new micro plate on B1.
-    Return DWP to magnet (A1).
-    Press Enter to continue...
-
-Start and wait timer (2mins)
-
-Transfer all liquid (A1) to same well in new micro plate (B1)
-    -> 11ul per well (here not everything that's possible)
-    z_max for aspirating in A1
-    z_start for dispensing in B1
-    WASH ALL TIPS AFTER EVERY COLUMN
-
-User prompt:
-    Done!
-    Press Enter to exit...
-'''
 from tecan import Tecan, Firmware, LiHa
 
 
 class Config:
-    COLUMNS = 12
+    COLUMNS = 1
     AIR_GAP_BEFORE = 30
     AIR_GAP_AFTER = 30
 
@@ -174,7 +82,7 @@ def main():
 
 
 def init() -> tuple[Tecan, LiHa]:
-    tecan = Tecan(port='/dev/tty.usbserial-1110', firmware=Firmware.STANDARD)
+    tecan = Tecan(port='/dev/tty.usbserial-110', firmware=Firmware.STANDARD)
     tecan.setup()
 
     liha = LiHa(tecan)
@@ -399,9 +307,22 @@ def fill_dwp_with_lowte(liha: LiHa, volume: int = 11):
         liha.move_xyz_to_pos(x, y, z)
         liha.dispense(volume=Config.AIR_GAP_AFTER + volume +
                       Config.AIR_GAP_BEFORE, speed=15)
+
+        # Touch wall
+        liha.move_x_to_pos(x + Config.A1_SPACE_BETWEEN_TIP_AND_WALL)
+        liha.move_x_to_pos(x - Config.A1_SPACE_BETWEEN_TIP_AND_WALL)
+        liha.move_x_to_pos(x)
+
         liha.move_z_to_pos(0)
 
+        # Wash tips
+        wash_tips(liha)
+
     liha.set_y_spacing(0)
+    x, y, _ = Config.WASH_XYZ_POS
+    liha.move_xyz_to_pos(
+        x=x, y=y, z=0,
+    )
 
 
 def transfer_liquid_to_new_plate(liha: LiHa, volume: int = 11):

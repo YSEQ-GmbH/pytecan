@@ -2,7 +2,7 @@ from tecan import Tecan, Firmware, LiHa
 
 
 def main():
-    tecan = Tecan(port='/dev/tty.usbserial-1110', firmware=Firmware.STANDARD)
+    tecan = Tecan(port='/dev/tty.usbserial-110', firmware=Firmware.STANDARD)
     tecan.setup()
 
     liha = LiHa(tecan)

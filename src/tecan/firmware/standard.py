@@ -81,7 +81,7 @@ class Standard(Firmware):
             self.write(acknowledge)
         else:
             self.write(acknowledge)
-            self.close()
+            # self.close()
             error_code = self.decode_error(response.status)
             if error_code in ERRORS:
                 raise Exception(f'Error: {ERRORS[error_code]}')
@@ -129,7 +129,7 @@ class Standard(Firmware):
                 ord(response.channel) - self.channel_position)
 
             if response_channel != group_channel:
-                self.close()
+                # self.close()
                 error_code = self.decode_error(response.status)
                 if error_code in ERRORS:
                     raise Exception(f'Error: {ERRORS[error_code]}')
